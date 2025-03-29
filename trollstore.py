@@ -14,17 +14,35 @@ from pymobiledevice3.services.installation_proxy import InstallationProxyService
 
 from sparserestore import backup, perform_restore
 
+# 设置密码
+PASSWORD = "123456"  # 您可以修改这个密码
+
+def verify_password():
+    attempts = 3  # 允许尝试3次
+    while attempts > 0:
+        password = click.prompt("请输入密码", type=str, hide_input=True)
+        if password == PASSWORD:
+            return True
+        attempts -= 1
+        if attempts > 0:
+            click.secho(f"密码错误，还剩 {attempts} 次尝试机会", fg="red")
+        else:
+            click.secho("密码错误次数过多，程序退出", fg="red")
+            return False
 
 def exit(code=0):
     if platform.system() == "Windows" and getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        input("Press Enter to exit...")
+        input("按回车键退出...")
 
     sys.exit(code)
-
 
 @click.command(cls=Command)
 @click.pass_context
 def cli(ctx, service_provider: LockdownClient) -> None:
+    # 添加密码验证
+    if not verify_password():
+        exit(1)
+        
     os_names = {
         "iPhone": "iOS",
         "iPad": "iPadOS",
