@@ -1,13 +1,37 @@
-name: Test PyQt5 macOS
+name: Build TrollRestore macOS
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
-  test:
+  build-mac:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
-      - run: pip install PyQt5 2>&1
-      - run: python3 -c "from PyQt5.QtWidgets import QApplication; print('OK')"
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          pip install PyQt5 qasync pymobiledevice3 packaging requests pyinstaller
+
+      - name: Build
+        run: |
+          pyinstaller --onedir --windowed \
+            --name "TrollRestore" \
+            --add-data "sparserestore:sparserestore" \
+            --add-data "PersistenceHelper_Embedded:." \
+            --hidden-import PyQt5.QtCore \
+            --hidden-import PyQt5.QtGui \
+            --hidden-import PyQt5.QtWidgets \
+            trollrestore_mac.py
+          ls -la dist/TrollRestore.app/Contents/MacOS/
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrollRestore-macOS
+          path: dist/TrollRestore.app
