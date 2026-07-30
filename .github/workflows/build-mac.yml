@@ -1,0 +1,35 @@
+name: Build TrollRestore macOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install PyQt5 qasync pymobiledevice3 packaging requests pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile --windowed \
+            --name "TrollRestore" \
+            --add-data "sparserestore:sparserestore" \
+            --add-data "PersistenceHelper_Embedded:." \
+            trollrestore_mac.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrollRestore-macOS
+          path: dist/TrollRestore
