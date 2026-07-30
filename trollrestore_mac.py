@@ -24,9 +24,11 @@ import requests
 import sys
 
 def resource_path(relative_path):
-    """获取 PyInstaller 打包内嵌资源的绝对路径"""
+    """获取资源文件绝对路径（兼容 PyInstaller 打包和源码运行）"""
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
+    if getattr(sys, 'frozen', False):
+        return os.path.join(os.path.dirname(sys.executable), relative_path)
     return os.path.join(os.path.abspath('.'), relative_path)
 from sparserestore import backup, perform_restore
 

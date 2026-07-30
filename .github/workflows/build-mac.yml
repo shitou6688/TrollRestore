@@ -14,53 +14,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Check files
-        run: |
-          ls -la
-          ls -la sparserestore/
-          file PersistenceHelper_Embedded
-
       - name: Install deps
         run: pip install PyQt5 qasync pymobiledevice3 packaging requests pyinstaller
 
-      - name: Verify imports
-        run: |
-          python3 -c "from PyQt5.QtWidgets import QApplication; from PyQt5.QtCore import Qt; print('PyQt5 OK')"
-          python3 -c "import qasync; print('qasync OK')"
-          python3 -c "from sparserestore import backup; print('sparserestore OK')"
-
-      - name: Build with full log
-        id: build
-        continue-on-error: true
+      - name: Build
         run: |
           pyinstaller --onedir --windowed \
             --name "TrollRestore" \
             --add-data "sparserestore:sparserestore" \
-            --add-data "PersistenceHelper_Embedded:." \
             --collect-all PyQt5 \
-            --log-level DEBUG \
-            trollrestore_mac.py > build.log 2>&1
-          echo "EXIT_CODE=$?" >> $GITHUB_OUTPUT
-          echo "=== LAST 200 LINES ===" && tail -200 build.log
+            trollrestore_mac.py
+          # PersistenceHelper_Embedded is iOS binary, cannot be codesigned on macOS
+          cp PersistenceHelper_Embedded dist/TrollRestore.app/Contents/MacOS/
+          ls -la dist/TrollRestore.app/Contents/MacOS/
 
-      - name: Print error if failed
-        if: steps.build.outputs.EXIT_CODE != '0'
-        run: |
-          echo "=== PyInstaller warnings/errors ==="
-          grep -i "error\|warning\|traceback\|fail\|cannot\|missing" build.log | tail -50
-
-      - name: Check dist
-        run: ls -la dist/ 2>/dev/null; ls -la dist/TrollRestore.app/Contents/MacOS/ 2>/dev/null || echo "No .app"
-
-      - name: Upload log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
-
-      - name: Upload app
-        if: hashFiles('dist/TrollRestore.app') != ''
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: TrollRestore-macOS
