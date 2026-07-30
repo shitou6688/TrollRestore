@@ -20,32 +20,30 @@ jobs:
         run: |
           pip install PyQt5 qasync pymobiledevice3 packaging requests py2app
 
-      - name: Build with py2app
+      - name: Verify setup
         run: |
-          python3 -c "
-import sys
-sys.argv = ['py2applet', '--make-setup', 'trollrestore_mac.py']
-exec(open('$(which py2applet)').read())
-" 2>/dev/null || true
+          python3 -c "import PyQt5; print('PyQt5 OK')"
+          python3 -c "import qasync; print('qasync OK')"
+          python3 -c "from sparserestore import backup; print('sparserestore OK')"
+          ls -la PersistenceHelper_Embedded
+          echo "All checks passed"
 
-          cat > setup.py << 'SETUPEOF'
+      - name: Create setup.py
+        run: |
+          cat > setup.py << 'EOF'
 from setuptools import setup
 
 APP = ['trollrestore_mac.py']
-DATA_FILES = [
-    ('sparserestore', ['sparserestore/__init__.py', 'sparserestore/backup.py', 'sparserestore/mbdb.py']),
-    ('', ['PersistenceHelper_Embedded']),
-]
+DATA_FILES = []
 OPTIONS = {
     'argv_emulation': False,
-    'packages': ['PyQt5', 'qasync', 'pymobiledevice3', 'packaging', 'requests'],
-    'includes': ['sip', 'PyQt5.QtCore', 'PyQt5.QtGui', 'PyQt5.QtWidgets'],
+    'packages': ['PyQt5', 'qasync'],
     'plist': {
         'CFBundleName': 'TrollRestore',
         'CFBundleDisplayName': '巨魔安装器',
         'CFBundleIdentifier': 'com.trollrestore.app',
-        'CFBundleVersion': '1.0.0',
-        'CFBundleShortVersionString': '1.0.0',
+        'CFBundleVersion': '1.0',
+        'CFBundleShortVersionString': '1.0',
     }
 }
 
@@ -56,12 +54,18 @@ setup(
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
 )
-SETUPEOF
+EOF
+          echo "setup.py created:"
+          cat setup.py
 
+      - name: Build with py2app
+        run: |
           python3 setup.py py2app 2>&1
+          echo "Build exit code: $?"
           ls -la dist/
 
-      - name: Upload app
+      - name: Upload artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: TrollRestore-macOS
