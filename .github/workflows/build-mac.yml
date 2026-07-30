@@ -25,6 +25,7 @@ jobs:
             --hidden-import PyQt5.QtCore \
             --hidden-import PyQt5.QtGui \
             --hidden-import PyQt5.QtWidgets \
+            --strip \
             --exclude-module PyQt5.QtSql \
             --exclude-module PyQt5.QtNetwork \
             --exclude-module PyQt5.QtPrintSupport \
