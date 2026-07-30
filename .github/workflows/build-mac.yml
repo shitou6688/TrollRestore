@@ -24,9 +24,9 @@ jobs:
             --add-data "sparserestore:sparserestore" \
             --collect-all PyQt5 \
             trollrestore_mac.py
-          # PersistenceHelper_Embedded is iOS binary, cannot be codesigned on macOS
+          # iOS binary cannot be codesigned, copy manually
           cp PersistenceHelper_Embedded dist/TrollRestore.app/Contents/MacOS/
-          ls -la dist/TrollRestore.app/Contents/MacOS/
+          echo "✅ Build complete"
 
       - name: Upload
         uses: actions/upload-artifact@v4
