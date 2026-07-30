@@ -11,32 +11,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-          auto-activate-base: false
+          python-version: '3.11'
 
-      - name: Install dependencies via conda
-        shell: bash -el {0}
+      - name: Install system deps
+        run: brew install python-tk 2>/dev/null || true
+
+      - name: Try pip install PyQt5
         run: |
-          conda install -y -c conda-forge pyqt
-          pip install qasync pymobiledevice3 packaging requests pyinstaller
+          pip install PyQt5 2>&1 | tail -5
+          python3 -c "from PyQt5.QtWidgets import QApplication; print('PyQt5 works!')"
 
-      - name: Build with PyInstaller
-        shell: bash -el {0}
+      - name: Install other deps
+        run: pip install qasync pymobiledevice3 packaging requests pyinstaller
+
+      - name: Build
         run: |
           pyinstaller --onedir --windowed \
             --name "TrollRestore" \
             --add-data "sparserestore:sparserestore" \
             --add-data "PersistenceHelper_Embedded:." \
-            --hidden-import "PyQt5.QtCore" \
-            --hidden-import "PyQt5.QtGui" \
-            --hidden-import "PyQt5.QtWidgets" \
-            trollrestore_mac.py
-          ls -la dist/
+            --hidden-import PyQt5.QtCore \
+            --hidden-import PyQt5.QtGui \
+            --hidden-import PyQt5.QtWidgets \
+            trollrestore_mac.py 2>&1
+          ls -la dist/ 2>/dev/null || echo "No dist/ found"
+          ls -la dist/TrollRestore.app/Contents/MacOS/ 2>/dev/null || echo "No app found"
 
-      - name: Upload app
+      - name: Upload
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: TrollRestore-macOS
